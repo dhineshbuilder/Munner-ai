@@ -75,8 +75,8 @@ class WorkoutService extends ChangeNotifier {
       }
     }
     
-    // Seed default plan if empty
-    if (_plans.isEmpty) {
+    // Seed default plan if empty or upgrade from old 3-day split
+    if (_plans.isEmpty || (_plans.length == 1 && _plans.first.name == "Default 3-Day Split")) {
       _seedDefaultPlan();
       await savePlans();
     }
@@ -134,140 +134,159 @@ class WorkoutService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Seed default plan
+  // Seed default 7-day progressive plan with warm-ups
   void _seedDefaultPlan() {
+    // MONDAY: Full Body A
     final monday = WorkoutDay(
       dayOfWeek: 1,
       workoutName: "Full Body A",
       walkingTargetMinutes: 30,
       exercises: [
-        Exercise(
-          id: "def-ex-1",
-          name: "Push-ups",
-          emoji: "💪",
-          type: "rep",
-          sets: 3,
-          reps: "10-15",
-          durationSeconds: 0,
-          restSeconds: 60,
-          instructions: "Keep your core tight and lower your chest to the floor.",
-          equipment: "Bodyweight",
-        ),
-        Exercise(
-          id: "def-ex-2",
-          name: "Bodyweight Squats",
-          emoji: "🦵",
-          type: "rep",
-          sets: 3,
-          reps: "12-15",
-          durationSeconds: 0,
-          restSeconds: 60,
-          instructions: "Squat down as if sitting in a chair, keeping knees behind toes.",
-          equipment: "Bodyweight",
-        ),
-        Exercise(
-          id: "def-ex-3",
-          name: "Plank Hold",
-          emoji: "🧱",
-          type: "time",
-          sets: 3,
-          reps: "",
-          durationSeconds: 40,
-          restSeconds: 45,
-          instructions: "Keep head, neck, and spine aligned in a straight line.",
-          equipment: "Bodyweight",
-        ),
+        // Warm-up
+        Exercise(id: "mon-w1", name: "March in place (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "Warm up with light, rhythmic marching.", equipment: "Bodyweight"),
+        Exercise(id: "mon-w2", name: "Arm & Hip circles (Warm-up)", emoji: "🔄", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "Loosen shoulders and hip joints.", equipment: "Bodyweight"),
+        Exercise(id: "mon-w3", name: "Bodyweight squats (Warm-up)", emoji: "🏋️", type: "rep", sets: 1, reps: "10", durationSeconds: 0, restSeconds: 20, instructions: "Easy warm-up squats.", equipment: "Bodyweight"),
+        Exercise(id: "mon-w4", name: "Easy lunges (Warm-up)", emoji: "🦵", type: "rep", sets: 1, reps: "6 each leg", durationSeconds: 0, restSeconds: 30, instructions: "Gentle lunges to prepare knees and hips.", equipment: "Bodyweight"),
+        // Main Workout
+        Exercise(id: "mon-e1", name: "Squat", emoji: "🦵", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Keep chest up, control the movement.", equipment: "Bodyweight / Dumbbell"),
+        Exercise(id: "mon-e2", name: "One-arm dumbbell row", emoji: "💪", type: "rep", sets: 3, reps: "10–15 each side", durationSeconds: 0, restSeconds: 60, instructions: "Pull dumbbell toward hip, squeeze your back.", equipment: "Dumbbells"),
+        Exercise(id: "mon-e3", name: "Incline push-up", emoji: "🤸", type: "rep", sets: 3, reps: "8–15", durationSeconds: 0, restSeconds: 60, instructions: "Hands on elevated surface (bench or table).", equipment: "Elevated Surface"),
+        Exercise(id: "mon-e4", name: "Dumbbell Romanian deadlift", emoji: "🏋️", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Hinge at hips, slight knee bend, flat back.", equipment: "Dumbbells"),
+        Exercise(id: "mon-e5", name: "Glute bridge", emoji: "🍑", type: "rep", sets: 3, reps: "12–20", durationSeconds: 0, restSeconds: 60, instructions: "Squeeze glutes at top, 1 sec hold.", equipment: "Mat / Floor"),
+        Exercise(id: "mon-e6", name: "Dead bug", emoji: "🧘", type: "rep", sets: 3, reps: "8–12 each side", durationSeconds: 0, restSeconds: 60, instructions: "Keep lower back pressed against floor.", equipment: "Mat / Floor"),
       ],
     );
 
+    // TUESDAY: Upper Body + Walk
+    final tuesday = WorkoutDay(
+      dayOfWeek: 2,
+      workoutName: "Upper Body + Walk",
+      walkingTargetMinutes: 40,
+      exercises: [
+        // Warm-up
+        Exercise(id: "tue-w1", name: "Marching & Arm Swings (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 120, restSeconds: 15, instructions: "Easy march with chest and arm swings.", equipment: "Bodyweight"),
+        Exercise(id: "tue-w2", name: "Arm Circles & Shoulder Rolls (Warm-up)", emoji: "🔄", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 20, instructions: "Rotate shoulders and arms smoothly.", equipment: "Bodyweight"),
+        // Main Workout
+        Exercise(id: "tue-e1", name: "Incline Push-ups", emoji: "🤸", type: "rep", sets: 3, reps: "8–15", durationSeconds: 0, restSeconds: 60, instructions: "Control the descent, push firmly.", equipment: "Elevated Surface"),
+        Exercise(id: "tue-e2", name: "One-arm Dumbbell Row", emoji: "🏋️", type: "rep", sets: 3, reps: "10–15 each side", durationSeconds: 0, restSeconds: 60, instructions: "Don't swing dumbbell, pull with control.", equipment: "Dumbbells"),
+        Exercise(id: "tue-e3", name: "One-arm Shoulder Press", emoji: "💪", type: "rep", sets: 3, reps: "8–12 each side", durationSeconds: 0, restSeconds: 60, instructions: "Press upward without arching back.", equipment: "Dumbbells"),
+        Exercise(id: "tue-e4", name: "Dumbbell Floor Press", emoji: "🏋️", type: "rep", sets: 3, reps: "10–15 each side", durationSeconds: 0, restSeconds: 60, instructions: "Elbows touch floor gently, press up.", equipment: "Dumbbells / Floor"),
+        Exercise(id: "tue-e5", name: "Dumbbell Biceps Curl", emoji: "💪", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Keep elbows pinned to your sides.", equipment: "Dumbbells"),
+        Exercise(id: "tue-e6", name: "Overhead Triceps Extension", emoji: "🔱", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Extend arms overhead, bend elbows back.", equipment: "Dumbbells"),
+      ],
+    );
+
+    // WEDNESDAY: Low-Impact Cardio + Core
     final wednesday = WorkoutDay(
       dayOfWeek: 3,
-      workoutName: "Full Body B",
-      walkingTargetMinutes: 30,
+      workoutName: "Low-Impact Cardio + Core",
+      walkingTargetMinutes: 40,
       exercises: [
-        Exercise(
-          id: "def-ex-4",
-          name: "Dumbbell Rows",
-          emoji: "🏋️",
-          type: "rep",
-          sets: 3,
-          reps: "10-12",
-          durationSeconds: 0,
-          restSeconds: 60,
-          instructions: "Pull dumbbell toward your hip, keeping elbow close to your side.",
-          equipment: "Dumbbells",
-        ),
-        Exercise(
-          id: "def-ex-5",
-          name: "Lunges",
-          emoji: "🏃",
-          type: "rep",
-          sets: 3,
-          reps: "10 each leg",
-          durationSeconds: 0,
-          restSeconds: 60,
-          instructions: "Step forward and lower back knee toward the floor.",
-          equipment: "Bodyweight",
-        ),
-        Exercise(
-          id: "def-ex-6",
-          name: "Jumping Jacks",
-          emoji: "✨",
-          type: "time",
-          sets: 3,
-          reps: "",
-          durationSeconds: 45,
-          restSeconds: 30,
-          instructions: "Maintain a steady, energetic rhythm.",
-          equipment: "Bodyweight",
-        ),
+        // Warm-up
+        Exercise(id: "wed-w1", name: "March in Place & Circles (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 120, restSeconds: 15, instructions: "March in place, arm and hip circles.", equipment: "Bodyweight"),
+        Exercise(id: "wed-w2", name: "Bodyweight squats (Warm-up)", emoji: "🦵", type: "rep", sets: 1, reps: "10", durationSeconds: 0, restSeconds: 20, instructions: "Warm up legs.", equipment: "Bodyweight"),
+        // Cardio Circuit (3 Rounds)
+        Exercise(id: "wed-e1", name: "March in place", emoji: "🚶", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Cardio circuit interval.", equipment: "Bodyweight"),
+        Exercise(id: "wed-e2", name: "Bodyweight squats", emoji: "🦵", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Continuous smooth tempo.", equipment: "Bodyweight"),
+        Exercise(id: "wed-e3", name: "Low Step-ups", emoji: "🪜", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Stable low step or aerobic bench.", equipment: "Step / Platform"),
+        Exercise(id: "wed-e4", name: "Incline push-ups", emoji: "🤸", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Paced repetitions.", equipment: "Elevated Surface"),
+        Exercise(id: "wed-e5", name: "Dumbbell deadlift", emoji: "🏋️", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Hinge properly, flat back.", equipment: "Dumbbells"),
+        Exercise(id: "wed-e6", name: "Standing knee raises", emoji: "🦵", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 20, instructions: "Alternate lifting knees toward chest.", equipment: "Bodyweight"),
+        Exercise(id: "wed-e7", name: "One-arm dumbbell row", emoji: "💪", type: "time", sets: 3, reps: "", durationSeconds: 40, restSeconds: 30, instructions: "Pull with control.", equipment: "Dumbbells"),
+        // Core
+        Exercise(id: "wed-e8", name: "Bird Dog", emoji: "🐦", type: "rep", sets: 3, reps: "10 each side", durationSeconds: 0, restSeconds: 30, instructions: "Opposite arm and leg reach, keep core braced.", equipment: "Mat / Floor"),
+        Exercise(id: "wed-e9", name: "Dead Bug", emoji: "🧘", type: "rep", sets: 3, reps: "10 each side", durationSeconds: 0, restSeconds: 30, instructions: "Lower back flat against floor.", equipment: "Mat / Floor"),
+        Exercise(id: "wed-e10", name: "Plank", emoji: "🧱", type: "time", sets: 3, reps: "", durationSeconds: 30, restSeconds: 45, instructions: "Solid forearm plank position.", equipment: "Mat / Floor"),
       ],
     );
 
+    // THURSDAY: Walk + Core + Mobility
+    final thursday = WorkoutDay(
+      dayOfWeek: 4,
+      workoutName: "Walk + Core + Mobility",
+      walkingTargetMinutes: 45,
+      exercises: [
+        // Warm-up
+        Exercise(id: "thu-w1", name: "Easy March & Arm Circles (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 120, restSeconds: 15, instructions: "Gentle warm-up movements.", equipment: "Bodyweight"),
+        // Core
+        Exercise(id: "thu-e1", name: "Dead Bug", emoji: "🐞", type: "rep", sets: 3, reps: "10 each side", durationSeconds: 0, restSeconds: 45, instructions: "Controlled, not to failure.", equipment: "Mat / Floor"),
+        Exercise(id: "thu-e2", name: "Bird Dog", emoji: "🐦", type: "rep", sets: 3, reps: "10 each side", durationSeconds: 0, restSeconds: 45, instructions: "Reach arm and opposite leg slowly.", equipment: "Mat / Floor"),
+        Exercise(id: "thu-e3", name: "Plank", emoji: "🧱", type: "time", sets: 3, reps: "", durationSeconds: 30, restSeconds: 45, instructions: "Hold steady, breathe.", equipment: "Mat / Floor"),
+        Exercise(id: "thu-e4", name: "Glute Bridge", emoji: "🍑", type: "rep", sets: 2, reps: "15", durationSeconds: 0, restSeconds: 45, instructions: "Squeeze glutes at top.", equipment: "Mat / Floor"),
+        // Mobility
+        Exercise(id: "thu-e5", name: "Hamstring & Quad Stretches", emoji: "🦵", type: "time", sets: 1, reps: "", durationSeconds: 90, restSeconds: 15, instructions: "Hold gentle leg stretches.", equipment: "Bodyweight"),
+        Exercise(id: "thu-e6", name: "Hip & Back Mobility", emoji: "🧘", type: "time", sets: 1, reps: "", durationSeconds: 90, restSeconds: 0, instructions: "Gentle hip openers and spinal rotations.", equipment: "Bodyweight"),
+      ],
+    );
+
+    // FRIDAY: Full Body + Upper Body
     final friday = WorkoutDay(
       dayOfWeek: 5,
-      workoutName: "Full Body C",
+      workoutName: "Full Body + Upper Body",
       walkingTargetMinutes: 30,
       exercises: [
-        Exercise(
-          id: "def-ex-7",
-          name: "Glute Bridges",
-          emoji: "🍑",
-          type: "rep",
-          sets: 3,
-          reps: "15",
-          durationSeconds: 0,
-          restSeconds: 45,
-          instructions: "Squeeze glutes at the top of the bridge, hold for 1 second.",
-          equipment: "Bodyweight",
-        ),
-        Exercise(
-          id: "def-ex-8",
-          name: "Mountain Climbers",
-          emoji: "🧗",
-          type: "time",
-          sets: 3,
-          reps: "",
-          durationSeconds: 30,
-          restSeconds: 45,
-          instructions: "Drive knees toward chest quickly while maintaining a solid plank position.",
-          equipment: "Bodyweight",
-        ),
+        // Warm-up
+        Exercise(id: "fri-w1", name: "March in place & Hip Circles (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 120, restSeconds: 15, instructions: "Warm up shoulders and hips.", equipment: "Bodyweight"),
+        Exercise(id: "fri-w2", name: "Bodyweight squats & Lunges (Warm-up)", emoji: "🦵", type: "rep", sets: 1, reps: "10 squats, 6 lunges", durationSeconds: 0, restSeconds: 20, instructions: "Prepare legs and lower body.", equipment: "Bodyweight"),
+        // Main Workout
+        Exercise(id: "fri-e1", name: "Incline Push-ups", emoji: "🤸", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Good form, controlled tempo.", equipment: "Elevated Surface"),
+        Exercise(id: "fri-e2", name: "One-arm Dumbbell Row", emoji: "🏋️", type: "rep", sets: 3, reps: "12–15 each side", durationSeconds: 0, restSeconds: 60, instructions: "Drive elbow back, don't swing dumbbell.", equipment: "Dumbbells"),
+        Exercise(id: "fri-e3", name: "One-arm Shoulder Press", emoji: "💪", type: "rep", sets: 3, reps: "10–12 each side", durationSeconds: 0, restSeconds: 60, instructions: "Solid overhead press.", equipment: "Dumbbells"),
+        Exercise(id: "fri-e4", name: "Goblet Squat", emoji: "🦵", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Hold dumbbell at chest level, squat deep.", equipment: "Dumbbells"),
+        Exercise(id: "fri-e5", name: "Dumbbell Romanian Deadlift", emoji: "🏋️", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Hinge hips back, feel hamstrings stretch.", equipment: "Dumbbells"),
+        Exercise(id: "fri-e6", name: "Dumbbell Biceps Curl", emoji: "💪", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Full curl range of motion.", equipment: "Dumbbells"),
+        Exercise(id: "fri-e7", name: "Overhead Triceps Extension", emoji: "🔱", type: "rep", sets: 3, reps: "10–15", durationSeconds: 0, restSeconds: 60, instructions: "Keep elbows high and tight.", equipment: "Dumbbells"),
+      ],
+    );
+
+    // SATURDAY: Full Body Conditioning + Long Walk
+    final saturday = WorkoutDay(
+      dayOfWeek: 6,
+      workoutName: "Full Body Conditioning",
+      walkingTargetMinutes: 60,
+      exercises: [
+        // Warm-up
+        Exercise(id: "sat-w1", name: "March in place & Circles (Warm-up)", emoji: "🚶", type: "time", sets: 1, reps: "", durationSeconds: 120, restSeconds: 15, instructions: "General warm-up.", equipment: "Bodyweight"),
+        Exercise(id: "sat-w2", name: "Squats & Reverse Lunges (Warm-up)", emoji: "🦵", type: "rep", sets: 1, reps: "8 squats, 6 lunges", durationSeconds: 0, restSeconds: 20, instructions: "Leg activation.", equipment: "Bodyweight"),
+        // Full-Body Circuit (3 rounds)
+        Exercise(id: "sat-e1", name: "Squat", emoji: "🦵", type: "rep", sets: 3, reps: "12", durationSeconds: 0, restSeconds: 45, instructions: "Circuit round - squat rhythmically.", equipment: "Bodyweight / Dumbbell"),
+        Exercise(id: "sat-e2", name: "Incline Push-ups", emoji: "🤸", type: "rep", sets: 3, reps: "10", durationSeconds: 0, restSeconds: 45, instructions: "Keep torso straight.", equipment: "Elevated Surface"),
+        Exercise(id: "sat-e3", name: "Dumbbell Deadlift", emoji: "🏋️", type: "rep", sets: 3, reps: "12", durationSeconds: 0, restSeconds: 45, instructions: "Strong back position.", equipment: "Dumbbells"),
+        Exercise(id: "sat-e4", name: "One-arm Dumbbell Row", emoji: "💪", type: "rep", sets: 3, reps: "10/side", durationSeconds: 0, restSeconds: 45, instructions: "Clean pull.", equipment: "Dumbbells"),
+        Exercise(id: "sat-e5", name: "Supported Reverse Lunge", emoji: "🦵", type: "rep", sets: 3, reps: "8/leg", durationSeconds: 0, restSeconds: 45, instructions: "Step back smoothly.", equipment: "Bodyweight"),
+        Exercise(id: "sat-e6", name: "One-arm Shoulder Press", emoji: "🏋️", type: "rep", sets: 3, reps: "10/side", durationSeconds: 0, restSeconds: 45, instructions: "Press upward firmly.", equipment: "Dumbbells"),
+        Exercise(id: "sat-e7", name: "Glute Bridge", emoji: "🍑", type: "rep", sets: 3, reps: "15", durationSeconds: 0, restSeconds: 45, instructions: "Bridge and squeeze glutes.", equipment: "Mat / Floor"),
+        Exercise(id: "sat-e8", name: "March in Place", emoji: "🚶", type: "time", sets: 3, reps: "", durationSeconds: 60, restSeconds: 60, instructions: "Cooldown march between rounds.", equipment: "Bodyweight"),
+      ],
+    );
+
+    // SUNDAY: Recovery & Mobility
+    final sunday = WorkoutDay(
+      dayOfWeek: 7,
+      workoutName: "Recovery & Mobility",
+      walkingTargetMinutes: 30,
+      exercises: [
+        Exercise(id: "sun-e1", name: "Hamstring stretch", emoji: "🦵", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "30 sec each side, breathe into the stretch.", equipment: "Mat / Floor"),
+        Exercise(id: "sun-e2", name: "Quad stretch", emoji: "🦵", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "30 sec each side, gentle quad opening.", equipment: "Bodyweight"),
+        Exercise(id: "sun-e3", name: "Calf stretch", emoji: "🦶", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "30 sec each side against a wall.", equipment: "Wall"),
+        Exercise(id: "sun-e4", name: "Hip circles & Mobility", emoji: "🔄", type: "rep", sets: 1, reps: "10 each direction", durationSeconds: 0, restSeconds: 15, instructions: "Smooth circular hip rotations.", equipment: "Bodyweight"),
+        Exercise(id: "sun-e5", name: "Shoulder circles & Chest stretch", emoji: "🙆", type: "time", sets: 1, reps: "", durationSeconds: 60, restSeconds: 15, instructions: "Open chest and shoulders gently.", equipment: "Bodyweight"),
+        Exercise(id: "sun-e6", name: "Gentle back mobility (Cat-Cow)", emoji: "🧘", type: "time", sets: 1, reps: "", durationSeconds: 90, restSeconds: 0, instructions: "Slow spinal waves on all fours.", equipment: "Mat / Floor"),
       ],
     );
 
     final defaultPlan = WorkoutPlan(
-      id: "default-plan-1",
-      name: "Default 3-Day Split",
+      id: "munner-7day-progression",
+      name: "Munner 7-Day Progression Plan",
       isActive: true,
       days: {
         1: monday,
-        2: WorkoutDay(dayOfWeek: 2, workoutName: "Rest Day", exercises: [], walkingTargetMinutes: 0),
+        2: tuesday,
         3: wednesday,
-        4: WorkoutDay(dayOfWeek: 4, workoutName: "Rest Day", exercises: [], walkingTargetMinutes: 0),
+        4: thursday,
         5: friday,
-        6: WorkoutDay(dayOfWeek: 6, workoutName: "Rest Day", exercises: [], walkingTargetMinutes: 0),
-        7: WorkoutDay(dayOfWeek: 7, workoutName: "Rest Day", exercises: [], walkingTargetMinutes: 0),
+        6: saturday,
+        7: sunday,
       },
     );
 
