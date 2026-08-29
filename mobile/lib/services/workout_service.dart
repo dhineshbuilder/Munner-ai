@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
+import 'audio_service.dart';
 
 class WorkoutService extends ChangeNotifier {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -24,10 +26,13 @@ class WorkoutService extends ChangeNotifier {
   
   // Alarm Settings
   bool _isAlarmEnabled = false;
-  List<int> _alarmDays = [1, 2, 3, 4, 5]; // Mon-Fri
+  List<int> _alarmDays = [1, 2, 3, 4, 5, 6, 7]; // Everyday by default
   int _alarmHour = 6;
   int _alarmMinute = 30;
-  int _alarmReminderOffsetMinutes = 15; // 15 mins before
+  int _alarmReminderOffsetMinutes = 0;
+  Timer? _alarmCheckTimer;
+  String? _lastAlarmTriggeredKey;
+  Function(int hour, int minute)? onAlarmTriggered;
 
   // Getters
   List<WorkoutPlan> get plans => _plans;
@@ -419,7 +424,7 @@ class WorkoutService extends ChangeNotifier {
     required List<int> days,
     required int hour,
     required int minute,
-    required int offsetMinutes,
+    int offsetMinutes = 0,
   }) async {
     _isAlarmEnabled = enabled;
     _alarmDays = days;
@@ -435,6 +440,36 @@ class WorkoutService extends ChangeNotifier {
     await prefs.setStringList('munner_alarm_days', days.map((d) => d.toString()).toList());
     
     notifyListeners();
+  }
+
+  // Active alarm ticker
+  void startAlarmTicker({Function(int hour, int minute)? onTrigger}) {
+    if (onTrigger != null) {
+      onAlarmTriggered = onTrigger;
+    }
+    _alarmCheckTimer?.cancel();
+    _alarmCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      if (!_isAlarmEnabled) return;
+      final now = DateTime.now();
+      final currentDay = now.weekday; // 1 = Monday, 7 = Sunday
+      
+      if (!_alarmDays.contains(currentDay)) return;
+      
+      final String timeKey = "${now.year}-${now.month}-${now.day}_${now.hour}:${now.minute}";
+      if (now.hour == _alarmHour && now.minute == _alarmMinute) {
+        if (_lastAlarmTriggeredKey != timeKey) {
+          _lastAlarmTriggeredKey = timeKey;
+          AudioService().playAlarm();
+          onAlarmTriggered?.call(_alarmHour, _alarmMinute);
+          notifyListeners();
+        }
+      }
+    });
+  }
+
+  void stopAlarmTicker() {
+    _alarmCheckTimer?.cancel();
+    _alarmCheckTimer = null;
   }
 
   // Active workout session recovery

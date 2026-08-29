@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/workout_service.dart';
+import '../services/audio_service.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -17,6 +18,7 @@ class _ProfileTabState extends State<ProfileTab> {
   bool _soundEnabled = true;
   bool _vibrationEnabled = true;
   bool _notificationsEnabled = true;
+  bool _isPlayingAlarmTest = false;
 
   final List<String> _avatars = ["🏃‍♂️", "🏃‍♀️", "🏋️‍♂️", "🏋️‍♀️", "💪", "⚡", "🧘‍♂️", "🧘‍♀️"];
   String _selectedAvatar = "💪";
@@ -87,10 +89,9 @@ class _ProfileTabState extends State<ProfileTab> {
     HapticFeedback.lightImpact();
     _workoutService.updateAlarmSettings(
       enabled: enabled,
-      days: _workoutService.alarmDays,
+      days: _workoutService.alarmDays.isEmpty ? [1, 2, 3, 4, 5, 6, 7] : _workoutService.alarmDays,
       hour: _workoutService.alarmHour,
       minute: _workoutService.alarmMinute,
-      offsetMinutes: _workoutService.alarmReminderOffsetMinutes,
     );
   }
 
@@ -98,27 +99,72 @@ class _ProfileTabState extends State<ProfileTab> {
     HapticFeedback.lightImpact();
     final List<int> updatedDays = List<int>.from(_workoutService.alarmDays);
     if (updatedDays.contains(day)) {
-      updatedDays.remove(day);
+      if (updatedDays.length > 1) {
+        updatedDays.remove(day);
+      }
     } else {
       updatedDays.add(day);
+      updatedDays.sort();
     }
     _workoutService.updateAlarmSettings(
-      enabled: _workoutService.isAlarmEnabled,
+      enabled: true,
       days: updatedDays,
       hour: _workoutService.alarmHour,
       minute: _workoutService.alarmMinute,
-      offsetMinutes: _workoutService.alarmReminderOffsetMinutes,
     );
   }
 
-  void _updateAlarmOffset(int offset) {
+  void _setAlarmPresetDays(List<int> presetDays) {
     HapticFeedback.lightImpact();
     _workoutService.updateAlarmSettings(
-      enabled: _workoutService.isAlarmEnabled,
-      days: _workoutService.alarmDays,
+      enabled: true,
+      days: presetDays,
       hour: _workoutService.alarmHour,
       minute: _workoutService.alarmMinute,
-      offsetMinutes: offset,
+    );
+  }
+
+  void _toggleTestAlarmSound() async {
+    HapticFeedback.mediumImpact();
+    if (_isPlayingAlarmTest) {
+      await AudioService().stop();
+      if (mounted) setState(() => _isPlayingAlarmTest = false);
+    } else {
+      setState(() => _isPlayingAlarmTest = true);
+      await AudioService().playAlarm();
+      Future.delayed(const Duration(seconds: 6), () {
+        if (mounted && _isPlayingAlarmTest) {
+          setState(() => _isPlayingAlarmTest = false);
+        }
+      });
+    }
+  }
+
+  Widget _buildPresetChip(String label, List<int> days, Color primaryColor) {
+    final bool isMatching = _workoutService.alarmDays.length == days.length &&
+        _workoutService.alarmDays.every((d) => days.contains(d));
+    return InkWell(
+      onTap: () => _setAlarmPresetDays(days),
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: isMatching ? primaryColor.withValues(alpha: 0.2) : Colors.white10,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isMatching ? primaryColor : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isMatching ? FontWeight.bold : FontWeight.w500,
+            color: isMatching ? primaryColor : Colors.white70,
+          ),
+        ),
+      ),
     );
   }
 
@@ -337,30 +383,64 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           const SizedBox(height: 24),
 
-          // WORKOUT REMINDER ALARM SECTION
+          // WORKOUT REMINDER ALARM SECTION (Simplified & User-Friendly)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: surfaceColor,
               borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: _workoutService.isAlarmEnabled 
+                    ? primaryColor.withValues(alpha: 0.3) 
+                    : Colors.white.withValues(alpha: 0.05),
+                width: 1.5,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Top Switch Row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.alarm, color: Colors.white70),
-                        SizedBox(width: 12),
-                        Text(
-                          "Workout Reminder",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _workoutService.isAlarmEnabled 
+                                ? primaryColor.withValues(alpha: 0.15) 
+                                : Colors.white10,
+                            borderRadius: BorderRadius.circular(14),
                           ),
+                          child: Icon(
+                            Icons.alarm_on_rounded, 
+                            color: _workoutService.isAlarmEnabled ? primaryColor : Colors.grey,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Daily Workout Alarm",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              _workoutService.isAlarmEnabled ? "Alarm is Active" : "Alarm is Turned Off",
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: _workoutService.isAlarmEnabled ? const Color(0xFF00E676) : const Color(0xFFA0A0A5),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -371,61 +451,121 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                   ],
                 ),
-                const Divider(color: Colors.white10, height: 24),
                 
-                // Alarm Time Selector
-                GestureDetector(
-                  onTap: _workoutService.isAlarmEnabled ? () => _selectTime(context) : null,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        "Start Time",
-                        style: TextStyle(color: Color(0xFFA0A0A5)),
-                      ),
-                      Text(
-                        alarmTimeStr,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _workoutService.isAlarmEnabled ? Colors.white : Colors.grey,
+                const Divider(color: Colors.white10, height: 28),
+                
+                // Prominent Big Time Picker Card
+                InkWell(
+                  onTap: () => _selectTime(context),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Colors.white12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "REMINDER TIME",
+                              style: TextStyle(
+                                color: Color(0xFFA0A0A5),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              alarmTimeStr,
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                color: _workoutService.isAlarmEnabled ? Colors.white : Colors.grey,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.access_time_rounded, size: 16, color: primaryColor),
+                              const SizedBox(width: 6),
+                              Text(
+                                "Change",
+                                style: TextStyle(
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Choose Days
-                const Text(
-                  "Choose Days",
-                  style: TextStyle(color: Color(0xFFA0A0A5), fontSize: 13),
+                // Quick Day Presets Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "REPEAT",
+                      style: TextStyle(
+                        color: Color(0xFFA0A0A5),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        _buildPresetChip("Everyday", [1, 2, 3, 4, 5, 6, 7], primaryColor),
+                        _buildPresetChip("Mon - Fri", [1, 2, 3, 4, 5], primaryColor),
+                        _buildPresetChip("Mon - Sat", [1, 2, 3, 4, 5, 6], primaryColor),
+                      ],
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 14),
+
+                // Individual Day Selector Bubbles
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(7, (index) {
                     final dayNum = index + 1; // 1 = Monday, 7 = Sunday
                     final isSelected = _workoutService.alarmDays.contains(dayNum);
                     return GestureDetector(
-                      onTap: _workoutService.isAlarmEnabled ? () => _toggleAlarmDay(dayNum) : null,
+                      onTap: () => _toggleAlarmDay(dayNum),
                       child: Container(
                         width: 38,
                         height: 38,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: isSelected && _workoutService.isAlarmEnabled 
-                              ? primaryColor 
-                              : Colors.white10,
-                          borderRadius: BorderRadius.circular(10),
+                          color: isSelected ? primaryColor : Colors.white10,
+                          shape: BoxShape.circle,
                         ),
                         child: Text(
                           dayShortcuts[index],
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: isSelected && _workoutService.isAlarmEnabled 
-                                ? Colors.white 
-                                : Colors.grey,
+                            color: isSelected ? Colors.white : Colors.grey,
+                            fontSize: 13,
                           ),
                         ),
                       ),
@@ -434,30 +574,32 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
                 const SizedBox(height: 20),
 
-                // Remind offset dropdown
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Remind me",
-                      style: TextStyle(color: Color(0xFFA0A0A5)),
+                // 🔊 Test Alarm Sound Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _toggleTestAlarmSound,
+                    icon: Icon(
+                      _isPlayingAlarmTest ? Icons.stop_circle_outlined : Icons.volume_up_rounded,
+                      color: _isPlayingAlarmTest ? Colors.redAccent : primaryColor,
+                      size: 20,
                     ),
-                    DropdownButton<int>(
-                      value: _workoutService.alarmReminderOffsetMinutes,
-                      dropdownColor: surfaceColor,
-                      underline: const SizedBox(),
-                      onChanged: _workoutService.isAlarmEnabled 
-                          ? (val) => _updateAlarmOffset(val ?? 15) 
-                          : null,
-                      items: const [
-                        DropdownMenuItem(value: 5, child: Text("5 minutes before")),
-                        DropdownMenuItem(value: 10, child: Text("10 minutes before")),
-                        DropdownMenuItem(value: 15, child: Text("15 minutes before")),
-                        DropdownMenuItem(value: 30, child: Text("30 minutes before")),
-                        DropdownMenuItem(value: 60, child: Text("60 minutes before")),
-                      ],
+                    label: Text(
+                      _isPlayingAlarmTest ? "Stop Sound Preview" : "Test Alarm Sound (alarm.mp3)",
+                      style: TextStyle(
+                        color: _isPlayingAlarmTest ? Colors.redAccent : Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
-                  ],
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(
+                        color: _isPlayingAlarmTest ? Colors.redAccent : Colors.white12,
+                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
                 ),
               ],
             ),
