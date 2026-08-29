@@ -94,7 +94,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("முன்னேறு AI"),
+        title: const Text(
+          "MunnerAI",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 0.8,
+          ),
+        ),
         centerTitle: true,
         leading: Padding(
           padding: const EdgeInsets.only(left: 12.0),

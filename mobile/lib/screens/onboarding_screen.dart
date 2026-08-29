@@ -126,7 +126,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (response != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Profile configured successfully! Welcome to முன்னேறு AI!"),
+            content: Text("Profile configured successfully! Welcome to MunnerAI!"),
             backgroundColor: Color(0xFF38EF7D),
           ),
         );

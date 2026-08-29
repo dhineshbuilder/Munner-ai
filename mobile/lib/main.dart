@@ -58,7 +58,7 @@ class MunnerAiApp extends StatelessWidget {
     const surfaceColor = Color(0xFF1A1A1E); // Dark Slate Card
 
     return MaterialApp(
-      title: 'முன்னேறு AI',
+      title: 'MunnerAI',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         primaryColor: primaryColor,

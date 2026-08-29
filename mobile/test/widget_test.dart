@@ -9,7 +9,7 @@ void main() {
     // Verify that the logo "மு" is shown.
     expect(find.text('மு'), findsOneWidget);
     
-    // Verify that the title "முன்னேறு AI" is shown.
-    expect(find.text('முன்னேறு AI'), findsOneWidget);
+    // Verify that the title "MunnerAI" is shown.
+    expect(find.text('MunnerAI'), findsOneWidget);
   });
 }

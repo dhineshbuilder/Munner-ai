@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     
                     // App Name & Tamil Description
                     const Text(
-                      "முன்னேறு AI",
+                      "MunnerAI",
                       style: TextStyle(
                         fontSize: 38,
                         fontWeight: FontWeight.w900,
@@ -230,9 +230,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      "உன் ஆரோக்கிய முன்னேற்றம்", // Your health progress
+                      "முன்னேறு · உன் ஆரோக்கிய முன்னேற்றம்", // Your health progress
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         color: Color(0xFF8E8E93),
                         fontWeight: FontWeight.w500,
                       ),
