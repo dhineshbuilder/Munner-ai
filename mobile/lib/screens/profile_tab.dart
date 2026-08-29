@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/workout_service.dart';
 import '../services/audio_service.dart';
+import '../services/notification_service.dart';
 
 class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
@@ -85,8 +86,11 @@ class _ProfileTabState extends State<ProfileTab> {
     }
   }
 
-  void _toggleAlarmEnabled(bool enabled) {
+  void _toggleAlarmEnabled(bool enabled) async {
     HapticFeedback.lightImpact();
+    if (enabled) {
+      await NotificationService().requestPermissions();
+    }
     _workoutService.updateAlarmSettings(
       enabled: enabled,
       days: _workoutService.alarmDays.isEmpty ? [1, 2, 3, 4, 5, 6, 7] : _workoutService.alarmDays,
@@ -132,6 +136,7 @@ class _ProfileTabState extends State<ProfileTab> {
     } else {
       setState(() => _isPlayingAlarmTest = true);
       await AudioService().playAlarm();
+      await NotificationService().showTestAlarmNotification();
       Future.delayed(const Duration(seconds: 6), () {
         if (mounted && _isPlayingAlarmTest) {
           setState(() => _isPlayingAlarmTest = false);

@@ -13,6 +13,7 @@ class AudioService {
     try {
       // Stop currently playing sounds first to avoid overlaps
       await _player.stop();
+      await _player.setReleaseMode(ReleaseMode.release);
       await _player.play(AssetSource('audio/$fileName'));
     } catch (e) {
       debugPrint("Audio play error for $fileName: $e");
@@ -20,7 +21,13 @@ class AudioService {
   }
 
   Future<void> playAlarm() async {
-    await playAsset('alarm.mp3');
+    try {
+      await _player.stop();
+      await _player.setReleaseMode(ReleaseMode.loop);
+      await _player.play(AssetSource('audio/alarm.mp3'));
+    } catch (e) {
+      debugPrint("Audio play error for alarm: $e");
+    }
   }
 
   Future<void> playNotification() async {

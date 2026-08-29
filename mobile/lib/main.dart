@@ -5,6 +5,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/workout_player_screen.dart';
 import 'services/workout_service.dart';
+import 'services/notification_service.dart';
 
 // Global config for Mock/Bypass mode
 bool isSupabaseConfigured = false;
@@ -19,6 +20,10 @@ String backendUrl = "https://backend-rust-six-81.vercel.app";
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // Initialize notification service for background alarms
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+
   // Initialize local workout service storage
   final workoutService = WorkoutService();
   await workoutService.init();

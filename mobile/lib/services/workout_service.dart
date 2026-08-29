@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/workout.dart';
 import 'audio_service.dart';
+import 'notification_service.dart';
 
 class WorkoutService extends ChangeNotifier {
   static final WorkoutService _instance = WorkoutService._internal();
@@ -134,6 +135,14 @@ class WorkoutService extends ChangeNotifier {
     final List<String>? daysList = prefs.getStringList('munner_alarm_days');
     if (daysList != null) {
       _alarmDays = daysList.map((d) => int.parse(d)).toList();
+    }
+
+    if (_isAlarmEnabled) {
+      NotificationService().scheduleWeeklyWorkoutAlarms(
+        hour: _alarmHour,
+        minute: _alarmMinute,
+        days: _alarmDays,
+      );
     }
 
     notifyListeners();
@@ -439,6 +448,17 @@ class WorkoutService extends ChangeNotifier {
     await prefs.setInt('munner_alarm_offset', offsetMinutes);
     await prefs.setStringList('munner_alarm_days', days.map((d) => d.toString()).toList());
     
+    // Sync with system background alarm scheduler
+    if (enabled) {
+      await NotificationService().scheduleWeeklyWorkoutAlarms(
+        hour: hour,
+        minute: minute,
+        days: days,
+      );
+    } else {
+      await NotificationService().cancelAllAlarms();
+    }
+
     notifyListeners();
   }
 

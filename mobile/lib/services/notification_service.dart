@@ -3,11 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'audio_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  static void Function(String actionId)? onNotificationActionTapped;
 
   final FlutterLocalNotificationsPlugin _notificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -43,7 +46,14 @@ class NotificationService {
     await _notificationsPlugin.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        debugPrint("Notification tapped with payload: ${response.payload}");
+        debugPrint("Notification tapped with payload: ${response.payload}, actionId: ${response.actionId}");
+        
+        // Stop the alarm sound playing in the background
+        AudioService().stop();
+
+        if (onNotificationActionTapped != null) {
+          onNotificationActionTapped!(response.actionId ?? 'open');
+        }
       },
     );
 
@@ -119,6 +129,20 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
+      ongoing: true,
+      autoCancel: false,
+      actions: <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'start_workout',
+          '🏋️ Start Workout',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'dismiss_alarm',
+          '❌ Dismiss',
+          cancelNotification: true,
+        ),
+      ],
       styleInformation: BigTextStyleInformation(
         "Time to work out! Stay consistent, follow your routine, and keep your streak alive.",
         contentTitle: "⏰ Workout Time — MunnerAI",
@@ -182,6 +206,20 @@ class NotificationService {
       fullScreenIntent: true,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
+      ongoing: true,
+      autoCancel: false,
+      actions: <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'start_workout',
+          '🏋️ Start Workout',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'dismiss_alarm',
+          '❌ Dismiss',
+          cancelNotification: true,
+        ),
+      ],
     );
 
     const iosDetails = DarwinNotificationDetails(

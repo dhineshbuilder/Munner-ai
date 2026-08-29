@@ -5,6 +5,7 @@ import 'workouts_tab.dart';
 import 'profile_tab.dart';
 import '../services/workout_service.dart';
 import '../services/audio_service.dart';
+import '../services/notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -45,6 +46,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       },
     );
+
+    // Register system notification alarm action listener
+    NotificationService.onNotificationActionTapped = (actionId) {
+      debugPrint("System notification action tapped: $actionId");
+      if (actionId == 'start_workout') {
+        HapticFeedback.heavyImpact();
+        AudioService().stop();
+        if (mounted) {
+          Navigator.pushNamed(context, '/player');
+        }
+      } else if (actionId == 'dismiss_alarm') {
+        HapticFeedback.lightImpact();
+        AudioService().stop();
+      }
+    };
   }
 
   void _showAlarmAlertDialog(int hour, int minute) {
@@ -236,5 +252,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    NotificationService.onNotificationActionTapped = null;
+    super.dispose();
   }
 }
