@@ -587,9 +587,6 @@ class _DayBuilderScreenState extends State<DayBuilderScreen> {
   void _reorderExercises(int oldIndex, int newIndex) {
     HapticFeedback.lightImpact();
     setState(() {
-      if (oldIndex < newIndex) {
-        newIndex -= 1;
-      }
       final exercises = List<Exercise>.from(_dayData.exercises);
       final item = exercises.removeAt(oldIndex);
       exercises.insert(newIndex, item);
@@ -722,7 +719,7 @@ class _DayBuilderScreenState extends State<DayBuilderScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _dayData.exercises.length,
-                onReorder: _reorderExercises,
+                onReorderItem: _reorderExercises,
                 itemBuilder: (context, index) {
                   final ex = _dayData.exercises[index];
                   return Container(
@@ -939,7 +936,7 @@ class _ExerciseEditorSheetState extends State<ExerciseEditorSheet> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<int>(
-                      value: _sets,
+                      initialValue: _sets,
                       decoration: const InputDecoration(labelText: "Sets"),
                       dropdownColor: surfaceColor,
                       items: List.generate(8, (i) => i + 1).map((sets) {
@@ -967,7 +964,7 @@ class _ExerciseEditorSheetState extends State<ExerciseEditorSheet> {
                   else
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        value: _duration,
+                        initialValue: _duration,
                         decoration: const InputDecoration(labelText: "Duration"),
                         dropdownColor: surfaceColor,
                         items: [15, 20, 30, 40, 45, 60, 90, 120].map((dur) {
@@ -982,7 +979,7 @@ class _ExerciseEditorSheetState extends State<ExerciseEditorSheet> {
 
               // Rest timer selector
               DropdownButtonFormField<int>(
-                value: _rest,
+                initialValue: _rest,
                 decoration: const InputDecoration(labelText: "Rest Timer Between Sets"),
                 dropdownColor: surfaceColor,
                 items: [0, 30, 45, 60, 90, 120, 150, 180].map((r) {

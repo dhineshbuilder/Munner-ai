@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/workout.dart';
 import '../services/workout_service.dart';
+import '../services/audio_service.dart';
 
 class WorkoutPlayerScreen extends StatefulWidget {
   const WorkoutPlayerScreen({super.key});
@@ -13,6 +14,7 @@ class WorkoutPlayerScreen extends StatefulWidget {
 
 class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
   final WorkoutService _workoutService = WorkoutService();
+  final AudioService _audioService = AudioService();
   
   WorkoutPlan? _plan;
   int _dayOfWeek = 1;
@@ -189,7 +191,11 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
       final diff = now.difference(_lastRestTickTime!).inSeconds;
       if (diff >= 1) {
         setState(() {
-          _restSecondsRemaining = (_restSecondsRemaining - diff).clamp(0, 9999);
+          final nextRemaining = (_restSecondsRemaining - diff).clamp(0, 9999);
+          if (nextRemaining > 0 && nextRemaining <= 3 && nextRemaining != _restSecondsRemaining) {
+            _audioService.playTick();
+          }
+          _restSecondsRemaining = nextRemaining;
           if (_restSecondsRemaining == 0) {
             _isRestMode = false;
             timer.cancel();
@@ -301,6 +307,7 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
 
   Future<void> _completeWorkout() async {
     HapticFeedback.mediumImpact();
+    _audioService.playSuccess();
     setState(() {
       _isWorkoutComplete = true;
     });
@@ -369,8 +376,15 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
     final activeEx = _exercises[_currentExIdx];
     final double overallProgress = (_currentExIdx + (_currentSetIdx - 1) / activeEx.sets) / _exercises.length;
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: _isWorkoutComplete,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
       child: Scaffold(
         body: SafeArea(
           child: Stack(
@@ -387,8 +401,9 @@ class _WorkoutPlayerScreenState extends State<WorkoutPlayerScreen> {
                         IconButton(
                           icon: const Icon(Icons.close, color: Colors.white70),
                           onPressed: () async {
-                            if (await _onWillPop()) {
-                              if (mounted) Navigator.pop(context);
+                            final shouldPop = await _onWillPop();
+                            if (shouldPop && context.mounted) {
+                              Navigator.of(context).pop();
                             }
                           },
                         ),

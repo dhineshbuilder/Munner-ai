@@ -209,9 +209,9 @@ class _ProfileTabState extends State<ProfileTab> {
   void _confirmResetData() {
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
           title: const Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
@@ -225,19 +225,19 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () async {
                 HapticFeedback.heavyImpact();
+                final nav = Navigator.of(dialogContext);
+                final messenger = ScaffoldMessenger.of(dialogContext);
                 await _workoutService.resetAllData();
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Application data has been reset.")),
-                  );
-                }
+                nav.pop();
+                messenger.showSnackBar(
+                  const SnackBar(content: Text("Application data has been reset.")),
+                );
               },
               child: const Text("Reset Everything", style: TextStyle(color: Colors.redAccent)),
             ),
@@ -366,7 +366,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     ),
                     Switch(
                       value: _workoutService.isAlarmEnabled,
-                      activeColor: primaryColor,
+                      activeThumbColor: primaryColor,
                       onChanged: _toggleAlarmEnabled,
                     ),
                   ],
@@ -538,7 +538,7 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
         Switch(
           value: value,
-          activeColor: Theme.of(context).primaryColor,
+          activeThumbColor: Theme.of(context).primaryColor,
           onChanged: (val) {
             HapticFeedback.lightImpact();
             onChanged(val);
