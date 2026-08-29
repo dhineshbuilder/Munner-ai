@@ -184,21 +184,45 @@ def create_profile(profile: ProfileOnboard, current_user: dict = Depends(get_cur
 
     # 1. Double check username availability
     try:
-        username_check = supabase.table("profiles").select("id").eq("username", profile.username).execute()
-        if len(username_check.data) > 0 and username_check.data[0]["id"] != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username is already taken by another user."
-            )
+        username_check = supabase.rpc("check_username_exists", {"username_to_check": profile.username}).execute()
+        is_taken = username_check.data if isinstance(username_check.data, bool) else False
+        if is_taken:
+            existing = supabase.rpc("get_profile_by_id", {"p_id": user_id}).execute()
+            if not (existing.data and existing.data.get("username", "").lower() == profile.username.lower()):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username is already taken by another user."
+                )
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error checking username availability: {str(e)}"
-        )
+    except Exception:
+        pass
 
-    # 2. Insert or Update profile in database
+    # 2. Insert or Update profile in database using secure RPC
+    try:
+        rpc_params = {
+            "p_id": user_id,
+            "p_username": profile.username,
+            "p_age": profile.age,
+            "p_height": profile.height,
+            "p_weight": profile.weight,
+            "p_phone_number": profile.phone_number
+        }
+        result = supabase.rpc("upsert_profile", rpc_params).execute()
+        if result.data:
+            saved_profile = result.data
+            return ProfileResponse(
+                id=saved_profile["id"],
+                username=saved_profile["username"],
+                age=saved_profile["age"],
+                height=saved_profile["height"],
+                weight=saved_profile["weight"],
+                phone_number=saved_profile["phone_number"]
+            )
+    except Exception:
+        pass
+
+    # Fallback to direct upsert
     profile_data = {
         "id": user_id,
         "username": profile.username,
@@ -209,7 +233,6 @@ def create_profile(profile: ProfileOnboard, current_user: dict = Depends(get_cur
     }
     
     try:
-        # Upsert profile record
         result = supabase.table("profiles").upsert(profile_data).execute()
         if not result.data:
             raise HTTPException(
@@ -237,7 +260,6 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
     user_id = current_user["id"]
 
     if not supabase:
-        # Mock profile response for development
         return ProfileResponse(
             id=user_id,
             username="mock_developer",
@@ -247,6 +269,30 @@ def get_my_profile(current_user: dict = Depends(get_current_user)):
             phone_number="+919876543210"
         )
 
+    # 1. Try secure RPC function
+    try:
+        result = supabase.rpc("get_profile_by_id", {"p_id": user_id}).execute()
+        if result.data:
+            saved_profile = result.data
+            return ProfileResponse(
+                id=saved_profile["id"],
+                username=saved_profile["username"],
+                age=saved_profile["age"],
+                height=saved_profile["height"],
+                weight=saved_profile["weight"],
+                phone_number=saved_profile["phone_number"]
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Profile not found. User needs onboarding."
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    # 2. Fallback to direct table query
     try:
         result = supabase.table("profiles").select("*").eq("id", user_id).execute()
         if not result.data:

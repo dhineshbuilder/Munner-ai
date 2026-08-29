@@ -44,10 +44,10 @@ drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile" on public.profiles
   for update using (auth.uid() = id);
 
--- 6. Grant basic API privileges (needed for RLS to evaluate policies for anon/authenticated roles)
+-- 6. Grant basic API privileges
 grant select, insert, update, delete on public.profiles to anon, authenticated, service_role;
 
--- 7. Secure function to check username existence (bypasses RLS select blocks securely)
+-- 7. Secure function to check username existence
 create or replace function public.check_username_exists(username_to_check text)
 returns boolean as $$
 begin
@@ -57,5 +57,50 @@ begin
 end;
 $$ language plpgsql security definer;
 
--- Grant execute permission on the check function to anonymous/authenticated API users
-grant execute on function public.check_username_exists(text) to anon, authenticated;
+grant execute on function public.check_username_exists(text) to anon, authenticated, service_role;
+
+-- 8. Secure function to upsert profile (allows backend to save verified profile securely)
+create or replace function public.upsert_profile(
+  p_id uuid,
+  p_username text,
+  p_age integer,
+  p_height float,
+  p_weight float,
+  p_phone_number text
+)
+returns json as $$
+declare
+  v_result json;
+begin
+  insert into public.profiles (id, username, age, height, weight, phone_number, updated_at)
+  values (p_id, p_username, p_age, p_height, p_weight, p_phone_number, timezone('utc'::text, now()))
+  on conflict (id) do update set
+    username = excluded.username,
+    age = excluded.age,
+    height = excluded.height,
+    weight = excluded.weight,
+    phone_number = excluded.phone_number,
+    updated_at = timezone('utc'::text, now())
+  returning to_json(profiles.*) into v_result;
+  
+  return v_result;
+end;
+$$ language plpgsql security definer;
+
+grant execute on function public.upsert_profile to anon, authenticated, service_role;
+
+-- 9. Secure function to get profile by user ID
+create or replace function public.get_profile_by_id(p_id uuid)
+returns json as $$
+declare
+  v_result json;
+begin
+  select to_json(p.*) into v_result
+  from public.profiles p
+  where p.id = p_id;
+  
+  return v_result;
+end;
+$$ language plpgsql security definer;
+
+grant execute on function public.get_profile_by_id to anon, authenticated, service_role;
