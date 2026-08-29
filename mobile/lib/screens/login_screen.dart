@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import '../main.dart';
-import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,13 +39,28 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     setState(() => _isLoading = true);
     
     if (!isSupabaseConfigured) {
-      _showBypassNotice();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Error: Supabase database configuration is missing on this client."),
+          duration: Duration(seconds: 4),
+        ),
+      );
       setState(() => _isLoading = false);
       return;
     }
 
     try {
-      // 1. Configure Google Sign-In Client
+      if (kIsWeb) {
+        // On Web, client-side google_sign_in lacks direct ID Token support on popups.
+        // Direct OAuth redirects are the standard and robust approach recommended by Supabase.
+        await Supabase.instance.client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          redirectTo: kDebugMode ? 'http://localhost:8080' : null,
+        );
+        return; // Redirect is handled by browser redirection
+      }
+
+      // On Android/iOS: Continue with native Google Sign-in flow
       const webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID', defaultValue: '');
       final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: webClientId.isNotEmpty ? webClientId : null,
@@ -91,12 +106,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Authentication Failed: ${e.toString()}"),
-            action: SnackBarAction(
-              label: 'Use Bypass',
-              onPressed: _handleDeveloperBypass,
-              textColor: const Color(0xFF38EF7D),
-            ),
-            duration: const Duration(seconds: 8),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -120,69 +130,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     }
   }
 
-  void _handleDeveloperBypass() {
-    setState(() {
-      mockUserId = "dev-mock-uuid-999";
-      mockUserEmail = "developer@munnerai.com";
-      // Ensure we navigate correctly
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Logged in as mock developer user! Checking profile status..."),
-        duration: Duration(seconds: 1),
-      ),
-    );
 
-    // Call API to see if mock profile already exists in DB
-    setState(() => _isLoading = true);
-    ApiService.getMyProfile().then((profile) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        if (profile != null && profile['username'] != 'mock_developer') {
-          // If we have a custom saved mock profile
-          Navigator.of(context).pushReplacementNamed('/home');
-        } else {
-          // Go to onboarding for brand new developer profile
-          Navigator.of(context).pushReplacementNamed('/onboarding');
-        }
-      }
-    });
-  }
-
-  void _showBypassNotice() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Development Mode"),
-          content: const Text(
-            "Supabase credentials are not configured in this build.\n\n"
-            "You can use the 'Developer Bypass' mode to test the complete onboarding screens, "
-            "FastAPI backend connection, and home screen immediately.",
-          ),
-          actions: [
-            TextButton(
-              child: const Text("Cancel"),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(120, 44),
-                backgroundColor: const Color(0xFFFF4B2B),
-              ),
-              child: const Text("Bypass Auth"),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _handleDeveloperBypass();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -314,21 +262,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                       ),
                                     ),
                                   ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              
-                              // Developer Bypass Option
-                              TextButton(
-                                onPressed: _handleDeveloperBypass,
-                                child: const Text(
-                                  "Test Auth Bypass (Developer Mode)",
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    decoration: TextDecoration.underline,
-                                  ),
                                 ),
                               ),
                             ],

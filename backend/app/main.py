@@ -63,10 +63,6 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     
     token = parts[1]
 
-    # DEV BYPASS: For developer testing
-    if token == "mock_developer_jwt_token":
-        return {"id": "00000000-0000-0000-0000-000000000000", "email": "developer@munnerai.com"}
-
     if not supabase:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -75,10 +71,23 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
 
     # Verification Strategy 1: Local JWT decoding (if secret is provided)
     if settings.SUPABASE_JWT_SECRET:
+        import base64
         try:
+            # Supabase signs JWTs with the raw bytes of a Base64 encoded HS256 secret.
+            # We must decode the base64 string to bytes before verification.
+            try:
+                # Add padding characters if missing (required by base64 module)
+                padded_secret = settings.SUPABASE_JWT_SECRET
+                missing_padding = len(padded_secret) % 4
+                if missing_padding:
+                    padded_secret += '=' * (4 - missing_padding)
+                secret_key = base64.b64decode(padded_secret)
+            except Exception:
+                secret_key = settings.SUPABASE_JWT_SECRET
+
             payload = jwt.decode(
                 token, 
-                settings.SUPABASE_JWT_SECRET, 
+                secret_key, 
                 algorithms=["HS256"], 
                 audience="authenticated"
             )
@@ -88,6 +97,17 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject")
             return {"id": user_id, "email": email}
         except JWTError as e:
+            # Fallback Strategy: If local verification fails, verify token directly via Supabase Auth API
+            try:
+                user_response = supabase.auth.get_user(token)
+                if user_response and user_response.user:
+                    return {
+                        "id": user_response.user.id,
+                        "email": user_response.user.email
+                    }
+            except Exception:
+                pass  # Fall through to throw the original JWTError
+                
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"Token verification failed: {str(e)}"

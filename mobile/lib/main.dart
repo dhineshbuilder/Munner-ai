@@ -12,7 +12,7 @@ String mockUserId = "";
 // Configurable FastAPI backend URL
 // 10.0.2.2 is the localhost loopback for Android Emulators.
 // 127.0.0.1/localhost is for iOS emulators or desktop testing.
-String backendUrl = "http://172.29.132.146:8000"; 
+String backendUrl = "https://backend-rust-six-81.vercel.app"; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
