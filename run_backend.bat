@@ -1,0 +1,8 @@
+@echo off
+echo Starting Munner-Ai FastAPI Backend...
+cd backend
+set SUPABASE_URL=https://wclctwwzrzpndkovrqtk.supabase.co
+set SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjbGN0d3d6cnpwbmRrb3ZycXRrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5OTcxNzksImV4cCI6MjEwMzU3MzE3OX0.mQ5kxTQPikMLPRj82OxbDVAAhGq2ytyDjtsZfsDjTks
+set SUPABASE_JWT_SECRET=4d4+T03H/i1FW/dzeAYeiBwlYJhVi5cNwxLNaUpfunLiM3YT6pOebOnMOaF+0ne8IoZ2AZLijNDVljsCUYaLWw==
+.\venv\Scripts\python.exe -m uvicorn app.main:app --reload
+pause

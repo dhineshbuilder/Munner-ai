@@ -1,0 +1,35 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Python virtual environment & caching
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
+backend/.pytest_cache/
+backend/.env
+
+# Flutter specific (usually managed inside /mobile/.gitignore)
+mobile/.dart_tool/
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/flutter_export_environment.sh
+mobile/*_android.iml
+mobile/*_ios.iml
+mobile/*.iml
+mobile/ios/Flutter/ephemeral/
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/android/app/src/main/res/values/strings.xml
