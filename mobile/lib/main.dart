@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/home_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/workout_player_screen.dart';
+import 'services/workout_service.dart';
 
 // Global config for Mock/Bypass mode
 bool isSupabaseConfigured = false;
@@ -16,6 +18,10 @@ String backendUrl = "https://backend-rust-six-81.vercel.app";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize local workout service storage
+  final workoutService = WorkoutService();
+  await workoutService.init();
   
   // Try to load Supabase settings from Dart environmental variables
   // Example run command: flutter run --dart-define=SUPABASE_URL=xxx --dart-define=SUPABASE_ANON_KEY=yyy
@@ -121,7 +127,8 @@ class MunnerAiApp extends StatelessWidget {
         '/': (context) => const AuthGate(),
         '/login': (context) => const LoginScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
-        '/home': (context) => const HomeScreen(),
+        '/home': (context) => const DashboardScreen(),
+        '/player': (context) => const WorkoutPlayerScreen(),
       },
     );
   }
@@ -156,7 +163,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (snapshot.data == true) {
-          return const HomeScreen();
+          return const DashboardScreen();
         } else {
           return const OnboardingScreen();
         }
