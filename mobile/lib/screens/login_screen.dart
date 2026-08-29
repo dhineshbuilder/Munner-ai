@@ -178,30 +178,41 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     
                     // Logo Icon Concept (மு)
                     Container(
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF4B2B), Color(0xFFFF6B4A)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
                         borderRadius: BorderRadius.circular(30),
                         boxShadow: [
                           BoxShadow(
                             color: primaryColor.withValues(alpha: 0.4),
-                            blurRadius: 20,
+                            blurRadius: 25,
                             offset: const Offset(0, 10),
                           )
-                        ]
+                        ],
                       ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        "மு", // Stylized Tamil Mu
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 54,
-                          fontWeight: FontWeight.w900,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: Image.asset(
+                          'assets/icon/app_icon.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFFF4B2B), Color(0xFFFF6B4A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              "மு",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 54,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
